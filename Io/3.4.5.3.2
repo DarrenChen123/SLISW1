@@ -1,0 +1,49 @@
+newXML := Object clone
+newXML depth ::= 0
+
+OperatorTable addAssignOperator(":", "atPutNumber")
+
+curlyBrackets := method(
+    attributes := list
+    call message arguments foreach(
+        attributePair,
+        attributes append(
+            self doString(attributePair asString)
+        )
+    )
+    return attributes
+)
+
+atPutNumber := method(name, value,
+    attribute := Map clone
+    attribute atPut("name", name)
+    attribute atPut("value", value)
+    
+    return attribute
+)
+
+atPut := method(
+    name, value,
+    if(list("Sequence", "Number") contains(value type),
+        super(atPut(name, value)))
+    return self
+)
+
+newXML forward := method(
+    prefix := (" " repeated(self depth))
+    writeln(prefix, "<", call message name, ">")
+    self setDepth(self depth + 1)
+    call message arguments foreach(
+            arg,
+            content := self doMessage(arg)
+            if(content type == "Sequence", writeln(prefix, " ", content))
+    )
+    self setDepth(self depth - 1)
+    writeln(prefix, "</", call message name, ">")
+)
+
+newXML ul(
+ li("Io"),
+ li(book({"author": "Tate"})),
+ li("JS")
+)

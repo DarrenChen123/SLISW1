@@ -1,0 +1,21 @@
+curlyBrackets := method(
+    mapList := call message arguments map(
+        value,
+        self doMessage(value);
+    )
+    
+    return(mapList)
+)
+
+example := {
+    "Item one",
+    "Item two",
+    "Item three",
+    "Final item"
+}
+
+("Size:" .. example size()) println
+
+example println
+
+example at(example size() - 1) println

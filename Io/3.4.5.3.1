@@ -1,0 +1,360 @@
+// Enhance the XML program to handle attributes: if the first
+// argument is a Map (use the curley brace syntax), add attributes
+// to the XML program.
+//
+// Example: book( {"author":"Tate"} ...  )
+
+
+// First, we need to define a new assigment operator. This will cause
+// the given operator to be parsed as a call to the given method on
+// the given context.
+OperatorTable addAssignOperator( ":", "atPutPair"  );
+
+
+// ---------------------------------------------------------- //
+// ---------------------------------------------------------- //
+
+
+// I am the XML document. I only contain an XML root element.
+XmlDocument := Object clone();
+
+
+// I am the XML document constructor. I get called when ever clone()
+// is invoked.
+XmlDocument init := method(
+
+    // I am the root node.
+        self rootNode ::= nil;
+
+            // Return this object reference for method chaining.
+                return( self  );
+
+
+        );
+
+
+        // I print the XML document as a pretty string with indentation.
+XmlDocument asString := method(
+ 
+     // Return the printed version of the entire XML document.
+        return(
+                self printNode( rootNode(), 0  )
+                    
+            );
+
+
+        );
+
+
+        // I get the pretty prefix we are going to use for outputting the
+        // XML document at a given depth.
+        XmlDocument getDepthPrefix := method( depth,
+        
+            // Each depth will be represented by four dots since my blog
+                // cannot handle multiple spaced :)
+        return(
+                 "...." repeated( depth  )
+                     
+              );
+
+              );
+
+
+              // I print the given XML node at the given depth.
+              XmlDocument printNode := method( xmlElement, depth,
+              
+                  // Create a string buffer for our output.
+                      buffer := list();
+                      
+                          // Friendly version of new line.
+                              newLine := "\n";
+                              
+                              
+                                  // Get the prefix for out output.
+                                      depthPrefix := self getDepthPrefix( depth  );
+                                      
+                                          // Output the start tag. This is a bit complicated because we
+                                              // are adding attributes here as part of the representation of
+                                                  // the open tag.
+                                      buffer append(
+                                               depthPrefix,
+                                                       "<",
+                                                               xmlElement name(),
+                                                               if(
+                                                                           (xmlElement attributes() size() > 0),
+                                                                           (
+                                                                                           // Create a buffer for our attribute list.
+                                                                                                           attributeBuffer := list( ""  );
+
+                                                                                                                           // Convert each name-value pair to quoted attribute
+                                                                                                                                           // notation name="value".
+                                                                                                                                                           xmlElement attributes() foreach( name, value,
+                                                                                                                                                               attributeBuffer append(
+                                                                                                                                                                                        name .. "=\"" .. value .. "\""
+                                                                                                                                                                                                            
+                                                                                                                                                                   );
+                                                                                                                                                                                   )
+
+                                                                                                                                                                                                   // Flatten the attribute buffer.
+                                                                                                                                                                                                                   attributeBuffer join( " "  )
+                                                                                                                                                                                                                               
+                                                                           ),
+                                                                           (
+                                                                                            // No attributes, just return empty string.
+                                                                                                            ""
+                                                                                                                        
+                                                                           )
+                                                                                   
+                                                                 ),
+                                                                         ">",
+                                                                                 newLine
+                                                                                     
+                                          );
+                                          
+                                              // Output any text value for this element. Notice that the text
+                                                  // is at a deeper depth than the actual node.
+                                          if(
+                                                   xmlElement text(),
+                                                   buffer append(
+                                                               self getDepthPrefix( depth + 1  ),
+                                                                           xmlElement text(),
+                                                                                       newLine
+                                                                                               
+                                                       );
+                                                           
+                                            )
+                                            
+                                                // Output each child node.
+                                                    xmlElement childNodes() foreach( childNode,
+                                                    
+                                                            // Print the child node.
+                                                            buffer append(
+                                                                         self printNode( childNode, (depth + 1)  )
+                                                                                 
+                                                                );
+                                                                
+                                                                    );
+                                                                    
+                                                                        // Output the close tag.
+                                                    buffer append(
+                                                             depthPrefix,
+                                                                     "</",
+                                                                             xmlElement name(),
+                                                                                     ">",
+                                                                                             newLine
+                                                                                                 
+                                                            );
+                                                            
+                                                                // Return the element output buffer.
+                                                    return(
+                                                             buffer join( ""  )
+                                                                 
+                                                          );
+                                                          
+                                                          );
+
+
+                                                          // ---------------------------------------------------------- //
+                                                          // ---------------------------------------------------------- //
+
+
+                                                          // I am the XML Attributes object. Each XML node will have an
+                                                          // attributes collection. This set of name-value pairs can be
+                                                          // defined using the { name:value  } notation within the IoML.
+                                                          XmlAttributes := Map clone();
+
+
+                                                          // I proxy the put() method to make sure that we are only adding
+                                                          // simple values as the attirbute value.
+                                                          XmlAttributes atPut := method( name, value,
+                                                          
+                                                              // For XML attributes, we only want to allow our values to be
+                                                                  // simple. That is, sequences and numbers.
+                                                                  if(
+                                                                           list( "Sequence", "Number"  ) contains( value type()  ),
+
+                                                                                   // Add the name-value pair to the attribute collection.
+                                                                                           // Since we have overriden the atPut() method, we need to
+                                                                                                   // pass this message up our prototype - Map.
+                                                                                                           super( atPut( name, value  )  );
+                                                                                                               
+                                                                    );
+                                                                    
+                                                                        // Return this object reference for method chaining.
+                                                                            return( self  );
+                                                                            
+                                                                            );
+
+
+                                                                            // ---------------------------------------------------------- //
+                                                                            // ---------------------------------------------------------- //
+
+
+                                                                            // I am the XML Element object. I contain a set of attributes and a
+                                                                            // set of child nodes.
+                                                                            XmlElement := Object clone();
+
+
+                                                                            // I am the Xml Element constructor. I get called with no arguments
+                                                                            // whenever the clone() method is called.
+                                                                            XmlElement init := method(
+                                                                             
+                                                                                 // I am the name of the element.
+                                                                                     self name ::= nil;
+
+                                                                                         // I am the text of the element.
+                                                                                             self text ::= nil;
+
+                                                                                                 // I am the attributes for this element.
+                                                                                                     self attributes ::= XmlAttributes clone();
+
+                                                                                                         // I am the child nodes for this element.
+                                                                                                             self childNodes ::= list();
+
+                                                                                                                 // I am the parent node for this element.
+                                                                                                                     self parentNode ::= nil;
+
+                                                                                                                         // Return self for method chaining.
+                                                                                                                             return( self  );
+
+
+                                                                                    );
+
+
+                                                                                    // ---------------------------------------------------------- //
+                                                                                    // ---------------------------------------------------------- //
+
+
+                                                                                    // I am the XML Parser.
+                                                                                    XmlParser := Object clone();
+
+
+                                                                                    // I am the parser constructor. I kthe same file as the code which uses
+                                                                                            // it. As such, we need to use doString() rather than our
+                                                                                                    // typeical doMessage() approach.
+                                                                                                            //
+                                                                                                                    // NOTE: I might be completely misunderstanding how to use
+                                                                                                                            // the new operator assigment.
+                                                                                    attributes append(
+                                                                                                 self doString( attributePair asString()  )
+                                                                                                         
+                                                                                            );
+
+                                                                                                );
+
+                                                                                                    // Return the parsed attribute list.
+                                                                                                        return( attributes  );
+
+                                                                                                        );
+
+
+                                                                                                        // All of the nodes are parsed in the context of the Xml parser. As
+                                                                                                        // such, we need to be able to dynamically handle any element type.
+                                                                                                        // Therefore, we need to listen for method calls that do not have
+                                                                                                        // any natural slot.
+                                                                                                        XmlParser forward := method(
+                                                                                                         
+                                                                                                             // Get the name of the method that was being invoked in this
+                                                                                                                 // "failed" message and will act as our element name.
+                                                                                                                     missingMethodName := call message() name();
+
+                                                                                                                         // Get the missing method arguments. This will contain an
+                                                                                                                             // optional attributes collection followed by zero or more
+                                                                                                                                 // XMl elements.
+                                                                                                                                     missingMethodArgs := call message() arguments();
+
+                                                                                                                                         // We need to create a new Xml Element with the given name.
+                                                                                                                                             xmlElement := XmlElement clone();
+
+                                                                                                                                                 // Set the name of the element to be the name of the missing
+                                                                                                                                                     // / Loop over each of the remaining arguments to add them as child
+                                                                                                                                                         // nodes on the currrent element.
+                                                                                                                                                             missingMethodArgs foreach( argument,
+                                                                                                                                                             
+                                                                                                                                                                     // Process the arguemnt and get the content.
+                                                                                                                                                                             content := self doMessage( argument  );
+                                                                                                                                                                             
+                                                                                                                                                                                     // Check to see if the content is an XML node. If it is, then
+                                                                                                                                                                                             // we can append it. If it is just a simple value, then we
+                                                                                                                                                                                                     // are going to make it the text of the current node.
+                                                                                                                                                                             if(
+                                                                                                                                                                                          (content type() == "XmlElement"),
+                                                                                                                                                                                          (
+                                                                                                                                                                                                          // Set the parent node relationship.
+                                                                                                                                                                                                                          content setParentNode( xmlElement  );
+
+                                                                                                                                                                                                                                          // Append the content as a chlid node.
+                                                                                                                                                                                                                                                          xmlElement childNodes() append( content  );
+                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                          ),
+                                                                                                                                                                                          (
+                                                                                                                                                                                                           // Set the content as the node next.
+                                                                                                                                                                                                                           xmlElement setText( content  );
+                                                                                                                                                                                                                                       
+                                                                                                                                                                                          )
+                                                                                                                                                                                                  
+                                                                                                                                                                               );
+                                                                                                                                                                               
+                                                                                                                                                                                   );
+
+                                                                                                                                                                                       // Return the parsed XML element.
+                                                                                                                                                                                           return( xmlElement  );
+
+
+                                                                                                                );
+
+
+                                                                                                                // I determine if the given message is a curly brackets notation.
+                                                                                                                XmlParser isCurlyBrackets := method( targetMessage,
+                                                                                                                
+                                                                                                                    // Check to see if the stringi arguemnt and get the content.
+                                                                                                                            content := self doMessage(s ee if the content is an XML node. If it is, then
+                                                                                                                                    // we can append it. If it is just a simp;
+                                                                                                                                    append it. If it is just a simple value, then we
+                                                                                                                                    // are gmethod(
+                                                                                                                                     
+                                                                                                                                         // Create a new XML document for our parsing.
+                                                                                                                                             xmlDoc := XmlDocument clone();
+
+                                                                                                                                                 // ,
+                                                                                                                                             (
+                                                                                                                                                             // Set the parent node relationshe elements that will populate it. We are going to assume
+                                                                                                                                                                 // that the xml document has only one root node - the first
+                                                                                                                                                                     // argument.
+                                                                                                                                              xmlDoc setRootNode(
+                                                                                                                                                  self doMessage(
+                                                                                                                                                              call message() arguments() at( 0  )
+                                                                                                                                                                      
+                                                                                                                                                      )
+                                                                                                                                                          
+                                                                                                                                                  );
+
+                                                                                                                                                      // Return the populated XML document.
+                                                                                                                                                          return( xmlDoc  );
+
+
+                                                                                                                                             );
+
+
+                                                                                                                                             // ------------nt.
+                                                                                                                                                 return( xmlElement  );
+
+
+                                                                                                                            );
+                                                                                                                            
+                                                                                                                            
+                                                                                                                            // I determine if the given message is a curly brackets notati------------- //
+                                                                                                                            
+                                                                                                                            
+                                                                                                                            // Parse the XML document.
+                                                                                                                            girls := XmlParser pars to see if the stringi arguemnt and get the content.
+                                                                                                                                    content := self doMessage(s ee if the},t := self doMessage(s ee if the content is an XML node. If it is,  If it is just a simp;
+                                                                                                                                    append it. If it is just a simple value, then we
+                                                                                                                                    // are gmethod(
+                                                                                                                                     
+                                                                                                                                          we
+                                                                                                                                          // are gmethod(
+
+                                                                                                                                              // Create a 
+                                                                                                                                          )
+                                                                                                                                    )))))

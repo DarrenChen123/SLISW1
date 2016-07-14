@@ -1,0 +1,22 @@
+def grepTest(fileName, wordName)
+ lineNum = 1
+ lineCount = 0
+ pattern = Regexp.new(wordName)
+ File.open fileName, 'r' do |file|
+ file.each_line do |line|
+  if pattern =~ line
+   puts "#{lineNum}:#{line}"
+   lineCount = lineCount + 1
+  end
+  lineNum = lineNum + 1
+ end
+ if lineCount == 0
+  puts "No such a word in the file."
+ end
+ end
+end
+
+print "input the word you are looking for:"
+wordName = gets
+grepTest("test.rb", wordName)
+

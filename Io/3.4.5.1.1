@@ -1,0 +1,28 @@
+XMLBuilder := Object clone
+
+XMLBuilder parseDepth ::= 0
+
+XMLBuilder forward := method(
+    missingMethodName := call message name
+    prettyPrefix := ("...." repeated(self parseDepth))
+
+    writeln(prettyPrefix, "<", missingMethodName, ">")
+
+    self setParseDepth(self parseDepth + 1)
+
+    call message arguments foreach(arg,
+        content := self doMessage(arg)
+        if(
+            (content type == "Sequence")
+            writeln(prettyPrefix, "....", content)
+          )
+        )
+        self setParseDepth(self parseDepth - 1)
+        writeln(prettyPrefix, "</", missingMethodName, ">")
+)
+
+XMLBuilder ul(
+    li("Io"),
+    li("Lua"),
+    li("JavaScript")
+)
